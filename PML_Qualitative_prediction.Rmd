@@ -4,7 +4,7 @@ author: "H.Harvey"
 date: "10 February 2016"
 output: html_document
 ---
-```{r setup, include=FALSE}
+```{r setup, include=FALSE,echo=FALSE, message=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_knit$set(root.dir = "/Users/hansharvey/Documents/Personnal Folder/Coursera/Data Science/Data Science Toolbox/Machine-Learning")
 ```
