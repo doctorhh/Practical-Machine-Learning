@@ -2,7 +2,7 @@
 title: 'Practical Machine Learning : Qualitative Prediction'
 author: "H.Harvey"
 date: "10 February 2016"
-output: html_document
+output: pdf_document
 ---
 ```{r setup, include=FALSE,echo=FALSE, message=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
