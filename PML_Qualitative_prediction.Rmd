@@ -6,7 +6,6 @@ output: html_document
 ---
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_knit$set(root.dir = "/Users/hansharvey/Documents/Personnal Folder/Coursera/Data Science/Data Science Toolbox/Machine-Learning")
 ```
 
 ```{r, echo=FALSE, message=FALSE}
