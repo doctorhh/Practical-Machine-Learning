@@ -1,0 +1,154 @@
+---
+title: 'Practical Machine Learning : Qualitative Prediction'
+author: "H.Harvey"
+date: "10 February 2016"
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, echo=FALSE, message=FALSE}
+library(ggplot2)
+library(caret)
+library(randomForest)
+library(rpart)
+library(rattle)
+```
+
+## Executive summary
+Using devices such as Jawbone Up, Nike FuelBand, and Fitbit it is now possible to collect a large amount of data about personal activity relatively inexpensively.
+
+One thing that people regularly do is quantify how much of a particular activity they do, but they rarely quantify how well they do it. 
+
+In this project, the goal is to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants to predict the manner in which they did the exercise. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways:
+
+- Class A: exactly according to the specification
+- Class B: throwing the elbows to the front
+- Class C: lifting the dumbbell only halfway
+- Class D: lowering the dumbbell only halfway
+- Class E: throwing the hips to the front
+
+More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
+
+## Predicted model algorithm
+To achieve the objective of this project, models are trained using the mentioned algorithms below since the objective is to predict a qualitative "Class" or category response.
+
+- Recursive partitioning for classification & regression (Rpart)
+- RandomForest (randomForest)
+
+After repeated trials from our training dataset, we can conclude that the  RandomForest algorithm offer a better strategy to predict the manner the "Class" are performing their exercices.
+
+## Data prepartion / procession
+```{r,cache=TRUE}
+setwd("/Users/hansharvey/Documents/Personnal Folder/Coursera/Data Science/Data Science Toolbox/Machine-Learning")
+# After an inital file load, it has been observed that a lot of variable contained
+# NA, blank space and #DIV/0! value.
+# Easier and shortest solution to consider blank space, #DIV/0! and NA as NA
+trainUrl <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv"
+validUrl <- "http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv"
+train_file <- read.csv(url(trainUrl), na.strings = c('NA','#DIV/0!',''))
+valid_file <- read.csv(url(validUrl), na.strings = c('NA','#DIV/0!',''))
+```
+
+
+An histogram of the frequency of shows the classe variable values across the dataset.
+```{r}
+ggplot(train_file, aes(classe, ..count..)) + geom_bar()
+```
+
+We can observe that the classe variable has five possible values; A, B, C, D, and E as defined in the introduction. the classe A represents the ideal weight-lifting method where the highest number of observations registered.
+
+```{r}
+# Remove column containing NA value (based on the parameter from the previous read.csv)
+train_data <- train_file[,colSums(is.na(train_file)) == 0]
+valid_data <- valid_file[,colSums(is.na(train_file)) == 0]
+```
+
+Based on the research paper by Velloso et al. (2013) p3. the first variables contained at the beginning of the dataset would not be required in the model prediction. Hence they are removed.
+
+```{r}
+train_data<-train_data[,-(1:7)]
+valid_data<-valid_data[,-(1:7)]
+```
+
+## Partitionning of the dataset in training and testing set.
+To train our prediction model, the dataset  was split into training and testing data  using a 70/30 ratio.
+```{r}
+# Partition data set between training and validation 
+set.seed(101) 
+intrain <- createDataPartition(train_data$classe, p = 0.7, list = FALSE) 
+training = train_data[intrain, ] # 70% split 
+testing <- train_data[-intrain, ] # 30% split 
+dim(training);dim(testing)
+```
+We can observe that the training set hase 53 variables with 13737 observations and the testing set has the same number of variable but fewer observsation (5885).
+
+## Prediction model
+As mentioned earlier, the outcome (classe) is a categorical variable. In this direction, our algorithm should be based on one of those which are able to model categorical (Tree, boosting, bagging, randomForest).
+
+Hence, a classification Tree algorithm was first used to test and predict qualitative outcome followed by a randomForest algorithm.
+
+```{r, cache=TRUE}
+# Recursive partitioning for classification & regression 
+set.seed(202)
+# Limiting the number of bootstrap resample to 5 (instead of 25 as default)
+# Using a Cross-valildation method
+fitControl = trainControl(method = "cv", number = 5)
+# The application of the rpart() generated more accuracy than the train() function
+# but created more variances. Hence the selection of the train() function
+# model_fit_Rpart <- rpart(classe ~ ., data=training, method="class")
+model_fit_Rpart <- train(classe ~.,data = training,method="rpart",trControl=fitControl)
+model_fit_Rpart$finalModel
+fancyRpartPlot(model_fit_Rpart$finalModel)
+```
+
+# Evaluating the classification tree model
+After training the model we compare its outcome to the testing data actual outcome using the confusion matrix function.
+
+```{r, cache=TRUE}
+# Testing the model and predicting value from the testing set.
+predict_Rpart<-predict(model_fit_Rpart,testing)
+# predict_Rpart<-predict(model_fit_Rpart,testing, type='class')
+conf_matrix_Rpart<-confusionMatrix(predict_Rpart,testing$classe)
+conf_matrix_Rpart
+```
+We observe with the above model, an accuracy of 0.4962, which is not offering an acceptable level of performance to conclude that this model would generate accurate prediction.
+
+The Random Forest algorithm was used to get a higher level of accuracy with the same numbers of predictor variables (52).
+
+```{r,cache=TRUE}
+# Model Random Forest
+set.seed(303)
+# Setting the parameter for the resampling method to "out of Box" sampling and to limit the number of 5 iteration instead of the default of 25 (to save CPU processing) time
+trControl = trainControl(method = "oob", number=5)
+# May take more than 10min
+model_fit_RF <- train(classe ~.,data = training, method="rf", trControl=trControl)
+model_fit_RF
+```
+We observe that the Random Forest model resulted in 99.2% accurate (with mtry=27). Thus this would be a more efficient model to use in predicitng our data.
+
+After training the model we compare its outcome to the testing data actual outcome using the onfusion matrix function.
+
+```{r}
+# Testing the model and predicting value from the testing set.
+predict_RF<-predict(model_fit_RF,testing)
+conf_matrix_RF<-confusionMatrix(predict_RF,testing$classe)
+conf_matrix_RF
+```
+## Cross-Validation
+
+```{r}
+#Test file validation
+predict_valid <- predict(model_fit_RF, valid_data) 
+predict_valid
+```
+
+## Reference
+The training data for this project are available here: https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv
+
+The test data are available here: https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+The data for this project come from this source: http://groupware.les.inf.puc-rio.br/har
+
+Velloso, E. and al. (2013) Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI, Germany
