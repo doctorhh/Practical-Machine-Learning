@@ -6,7 +6,10 @@ output: html_document
 ---
 ```{r setup, include=FALSE,echo=FALSE, message=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+<<<<<<< HEAD
 
+=======
+>>>>>>> origin/gh-pages
 ```
 
 ```{r, echo=FALSE, message=FALSE}
